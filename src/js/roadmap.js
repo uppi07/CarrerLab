@@ -3,7 +3,6 @@ import { A } from './state.js';
 import { go, toast, ai, parseObj, sleep } from './utils.js';
 
 export async function buildRoadmap() {
-  A.api  = document.getElementById('api-key').value.trim();
   A.name = document.getElementById('user-name').value.trim();
   A.jd   = document.getElementById('jd-input').value.trim();
   A.role = document.getElementById('target-role').value.trim();
@@ -12,7 +11,7 @@ export async function buildRoadmap() {
   const errEl = document.getElementById('err-msg');
   errEl.style.display = 'none';
 
-  if (!A.api)  return showErr('Enter your Claude API key');
+  if (!A.api)  return showErr('Claude API key not configured');
   if (!A.name) return showErr('Enter your name');
   if (!A.jd)   return showErr('Paste a job description');
   if (!A.role) return showErr('Enter your target role');
