@@ -1143,18 +1143,46 @@ async function handleRegister() {
   try {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
+
+    if (!data.user) {
+      throw new Error('Signup failed - no user returned');
+    }
+
     A.user = data.user;
     A.userId = data.user.id;
-    await supabase.from('profiles').insert({ id: A.userId, name, role: '', level: '', days: 30 });
-    toast('Account created! Signing you in…', 'ok');
+    A.name = name;
+
+    // Wait for session to be established
+    await sleep(500);
+
+    // Create profile
+    const { error: profileError } = await supabase.from('profiles').insert({
+      id: A.userId,
+      name: name,
+      role: '',
+      level: '',
+      days: 30
+    });
+
+    if (profileError) {
+      console.error('Profile creation error:', profileError);
+      throw new Error('Failed to create profile: ' + profileError.message);
+    }
+
+    document.getElementById('user-chip').textContent = name;
+    document.getElementById('user-name').value = name;
+
+    toast('Account created!', 'ok');
+
     document.getElementById('register-name').value = '';
     document.getElementById('register-email').value = '';
     document.getElementById('register-pwd').value = '';
-    await loadUserData();
+
+    go('s1');
   } catch (e) {
-    errEl.textContent = e.message;
+    console.error('Registration error:', e);
+    errEl.textContent = e.message || 'Registration failed';
     errEl.style.display = 'block';
-  } finally {
     btn.disabled = false;
     btn.textContent = 'Create account';
   }
@@ -1234,7 +1262,7 @@ async function initAuth() {
   }
 }
 
-supabase.auth.onAuthStateChange((event, session) => {
+supabase.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_OUT') {
     A.user = null;
     A.userId = null;
