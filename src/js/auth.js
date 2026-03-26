@@ -24,6 +24,23 @@ export async function handleLogin() {
     if (error) throw error;
     A.user = data.user;
     A.userId = data.user.id;
+
+    const registerUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/check-device`;
+    const registerRes = await fetch(registerUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ userId: A.userId })
+    });
+
+    const registerData = await registerRes.json();
+    if (!registerData.allowed) {
+      await supabase.auth.signOut();
+      throw new Error(registerData.message || 'Cannot sign in from this device');
+    }
+
     await loadUserData();
     toast('Signed in!', 'ok');
   } catch (e) {
@@ -58,6 +75,20 @@ export async function handleRegister() {
   btn.textContent = 'Creating account…';
 
   try {
+    const checkUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/check-device`;
+    const checkRes = await fetch(checkUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const checkData = await checkRes.json();
+    if (checkData.registered) {
+      throw new Error('This device already has an account. Only one account per device is allowed.');
+    }
+
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
 
@@ -83,6 +114,16 @@ export async function handleRegister() {
       console.error('Profile creation error:', profileError);
       throw new Error('Failed to create profile: ' + profileError.message);
     }
+
+    const registerUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/check-device`;
+    await fetch(registerUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ userId: A.userId })
+    });
 
     document.getElementById('user-chip').textContent = name;
     document.getElementById('user-name').value = name;
