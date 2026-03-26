@@ -126,6 +126,10 @@ export async function handleLogout() {
 }
 
 export async function initAuth() {
+  if (import.meta.env.VITE_CLAUDE_API_KEY) {
+    A.api = import.meta.env.VITE_CLAUDE_API_KEY;
+  }
+
   const { data: { session } } = await supabase.auth.getSession();
   if (session) {
     A.user = session.user;
