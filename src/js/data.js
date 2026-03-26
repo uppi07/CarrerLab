@@ -46,13 +46,14 @@ export async function loadUserData() {
 }
 
 export async function saveRoadmap(mmData) {
-  const { data, error } = await supabase.from('roadmaps').insert({
+  const { data, error } = await supabase.from('roadmaps').upsert({
     user_id: A.userId,
     role: A.role,
     jd_text: A.jd,
     days: A.days,
-    roadmap_json: mmData
-  }).select().single();
+    roadmap_json: mmData,
+    updated_at: new Date().toISOString()
+  }, { onConflict: 'user_id' }).select().single();
 
   if (error) throw error;
   A.roadmapId = data.id;

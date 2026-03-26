@@ -17,6 +17,11 @@ export async function buildRoadmap() {
   if (!A.jd)   return showErr('Paste a job description');
   if (!A.role) return showErr('Enter your target role');
 
+  if (A.roadmapId) {
+    const confirmed = confirm('You already have a roadmap. Creating a new one will replace your existing roadmap and schedule. Continue?');
+    if (!confirmed) return;
+  }
+
   const btn = document.getElementById('s1-btn');
   btn.disabled = true;
   btn.textContent = 'Analysing…';

@@ -11,20 +11,37 @@ export async function confirmRoadmap() {
   try {
     if (!A.roadmapId) {
       toast('Roadmap not found', 'err');
+      btn.disabled = false;
+      btn.textContent = 'Looks good — build my schedule →';
       return;
+    }
+
+    if (A.scheduleId) {
+      const confirmed = confirm('You already have a schedule. This will replace your existing progress. Continue?');
+      if (!confirmed) {
+        btn.disabled = false;
+        btn.textContent = 'Looks good — build my schedule →';
+        return;
+      }
     }
 
     await generatePlan();
 
-    const { data: scheduleData, error: scheduleError } = await supabase.from('schedules').insert({
+    A.done = new Set();
+    A.currentDay = null;
+    A.lessons = {};
+    A.lessonStep = {};
+
+    const { data: scheduleData, error: scheduleError } = await supabase.from('schedules').upsert({
       user_id: A.userId,
       roadmap_id: A.roadmapId,
       plan_json: A.plan,
       done: [],
       current_day: null,
       lessons: {},
-      lesson_step: {}
-    }).select().maybeSingle();
+      lesson_step: {},
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id' }).select().maybeSingle();
 
     if (scheduleError) throw scheduleError;
     A.scheduleId = scheduleData.id;
