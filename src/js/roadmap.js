@@ -1,6 +1,7 @@
 import { supabase } from './config.js';
 import { A } from './state.js';
 import { go, toast, ai, parseObj, sleep } from './utils.js';
+import { saveRoadmap } from './data.js';
 
 export async function buildRoadmap() {
   A.name = document.getElementById('user-name').value.trim();
@@ -31,6 +32,7 @@ export async function buildRoadmap() {
   go('s2');
 
   await generateRoadmap();
+  await saveRoadmap(A.mmData);
   renderRoadmap();
   document.getElementById('s2-confirm-btn').disabled = false;
   toast('Roadmap ready!', 'ok');

@@ -9,22 +9,21 @@ export async function confirmRoadmap() {
   btn.textContent = 'Building schedule…';
 
   try {
-    const { data: roadmapData, error: roadmapError } = await supabase.from('roadmaps').insert({
-      user_id: A.userId,
-      role: A.role,
-      jd_text: A.jd,
-      roadmap_json: A.mmData
-    }).select().maybeSingle();
-
-    if (roadmapError) throw roadmapError;
-    A.roadmapId = roadmapData.id;
+    if (!A.roadmapId) {
+      toast('Roadmap not found', 'err');
+      return;
+    }
 
     await generatePlan();
 
     const { data: scheduleData, error: scheduleError } = await supabase.from('schedules').insert({
       user_id: A.userId,
       roadmap_id: A.roadmapId,
-      plan_json: A.plan
+      plan_json: A.plan,
+      done: [],
+      current_day: null,
+      lessons: {},
+      lesson_step: {}
     }).select().maybeSingle();
 
     if (scheduleError) throw scheduleError;

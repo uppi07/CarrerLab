@@ -2,6 +2,7 @@ import { supabase } from './config.js';
 import { A } from './state.js';
 import { toast, ai, parseArr } from './utils.js';
 import { goToChat } from './chat.js';
+import { saveSchedule, updateScheduleProgress } from './data.js';
 
 export function buildSidebar() {
   const list = document.getElementById('day-list');
@@ -118,7 +119,11 @@ function renderTask(i,d,done) {
       : `<div style="text-align:center;padding:13px;font-size:12px;color:var(--green)">Day ${d.day} complete ✓ — <span style="cursor:pointer;text-decoration:underline" onclick="window.goToChat()">Enter challenge room</span></div>`}`;
 }
 
-export function switchStep(i,step){ A.lessonStep[i]=step; renderDay(i); }
+export function switchStep(i,step){
+  A.lessonStep[i]=step;
+  renderDay(i);
+  updateScheduleProgress();
+}
 export function toggleChk(di,oi){ document.getElementById(`chk-${di}-${oi}`)?.classList.toggle('on'); }
 
 export function answerQ(di,qi,chosen,correct) {
@@ -139,13 +144,7 @@ export async function markDone(i) {
   document.getElementById('di-'+i)?.classList.add('done');
   updateProg(); renderDay(i);
 
-  await supabase.from('progress').upsert({
-    user_id: A.userId,
-    day_number: i + 1,
-    topic: A.plan[i].topic,
-    completed: true,
-    completed_at: new Date().toISOString()
-  }, { onConflict: 'user_id,day_number' });
+  await updateScheduleProgress();
 
   toast('Day '+A.plan[i].day+' complete!','ok');
   setTimeout(goToChat, 700);
@@ -195,13 +194,7 @@ Write both blocks now:`;
     A.lessons[i] = { content, quiz: Array.isArray(quiz)?quiz:[] };
     A.lessonStep[i] = 0;
 
-    await supabase.from('lessons').upsert({
-      user_id: A.userId,
-      day_number: i + 1,
-      topic: d.topic,
-      content: content,
-      quiz_json: quiz
-    }, { onConflict: 'user_id,day_number' });
+    await updateScheduleProgress();
 
     renderDay(i);
     toast('Lesson ready!','ok');
